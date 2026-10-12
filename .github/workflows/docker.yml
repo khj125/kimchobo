@@ -22,6 +22,12 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
+      # 🔢 빌드 번호를 로그인 화면 문구에 자동 반영
+      - name: Set version on login page
+        run: |
+          sed -i "s|kimchobo - v[0-9]*|kimchobo - v${{ github.run_number }}|" webgoat-container/src/main/resources/templates/login.html
+          grep "kimchobo" webgoat-container/src/main/resources/templates/login.html
+
       # 3️⃣ Maven으로 WebGoat 빌드
       - name: Build WebGoat JAR
         env:
@@ -56,11 +62,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 5️⃣ Docker 이미지 빌드
+      # 5️⃣ Docker 이미지 빌드 (빌드 번호 태그 추가)
       - name: Build Docker image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/webgoat:latest \
                        -t ${{ secrets.DOCKERHUB_USERNAME }}/webgoat:v8.2.0-SNAPSHOT \
+                       -t ${{ secrets.DOCKERHUB_USERNAME }}/webgoat:build-${{ github.run_number }} \
                        -f Dockerfile .
 
       # 6️⃣ Docker Hub로 푸시
@@ -68,3 +75,4 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/webgoat:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/webgoat:v8.2.0-SNAPSHOT
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/webgoat:build-${{ github.run_number }}
